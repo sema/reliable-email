@@ -52,6 +52,19 @@ class ReliableEmailTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(refrontend.queue.size(), 1)
 
+    def test_invalid_submission_empty_values(self):
+        refrontend.queue.reset()
+
+        response = self.app.post('/', data={
+            'subject': 'Test',
+            'body': 'Test',
+            'to': ''
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(refrontend.queue.size(), 0)
+
+
 
 if __name__ == '__main__':
     unittest.main()

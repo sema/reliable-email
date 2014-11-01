@@ -1,8 +1,12 @@
 
+import json
 from flask import Flask, request
 from requeue import DistributedQueue
+from werkzeug.exceptions import BadRequestKeyError
 
 DEBUG = False
+
+LOG = 'refrontend.log'
 
 DEFAULT_FROM_EMAIL = 'no-reply@example.org'
 DEFAULT_FROM_NAME = ''
@@ -14,8 +18,26 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('REFRONTEND_SETTINGS', silent=True)
 
+# Logging
+
+import logging
+file_handler = logging.FileHandler(LOG)
+file_handler.setLevel(logging.DEBUG)
+app.logger.addHandler(file_handler)
+
+# Connections
+
 # TODO handle failure
 queue = DistributedQueue(app.config['REDIS_SERVER_URL'])
+
+
+def _normalize(form, key, default=None):
+    """
+    Return form.get(key, default).
+    However, if form[key] is the empty string then default is also used.
+    """
+    value = form.get(key, '').strip()
+    return value if value != '' else default
 
 
 @app.route('/', methods=['POST'])
@@ -32,18 +54,33 @@ def submit_email():
     from_name (optional): name of the sender
     """
 
-    queue.push({
-        'subject': request.form['subject'],
-        'body': request.form['body'],
+    subject = _normalize(request.form, 'subject')
+    body = _normalize(request.form, 'body')
 
-        'to_email': request.form['to'],
-        'to_name': request.form.get('to_name', ''),  # optional
+    to_email = _normalize(request.form, 'to')
+    to_name = _normalize(request.form, 'to_name', None)
 
-        'from_email': request.form.get('from', app.config['DEFAULT_FROM_EMAIL']),  # optional
-        'from_name': request.form.get('from_name', app.config['DEFAULT_FROM_NAME'])  # optional
-    })
+    from_email = _normalize(request.form, 'from_email', app.config['DEFAULT_FROM_EMAIL'])
+    from_name = _normalize(request.form, 'from_name', app.config['DEFAULT_FROM_NAME'])
 
-    return 'OK'
+    if subject is not None and body is not None and to_email is not None:
+        queue.push({
+            'subject': subject,
+            'body': body,
+
+            'to_email': to_email,
+            'to_name': to_name,
+
+            'from_email': from_email,
+            'from_name': from_name
+        })
+
+        return json.dumps({'ok': True})
+
+    else:
+        message = 'Application sent malformed request missing one of arguments: subject, body or to'
+        app.logger.debug(message)
+        return json.dumps({'ok': False, 'error_message': message}), 400, None
 
 if __name__ == '__main__':
     app.run(debug=True)
