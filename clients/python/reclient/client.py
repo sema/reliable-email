@@ -1,6 +1,12 @@
 
 import urllib
 import urllib2
+import json
+
+
+class ReClientException(Exception):
+    def __init__(self, *args, **kwargs):
+        super(ReClientException, self).__init__(*args, **kwargs)
 
 
 class ReClient(object):
@@ -22,7 +28,8 @@ class ReClient(object):
         :param str to_name: (optional)
         :param str from_email: (optional)
         :param str from_name: (optional)
-        :return: True if submitted, otherwise it returns False
+        :return: True
+        :raises: ReClientException if the email could not be submitted
         """
 
         data = urllib.urlencode({
@@ -37,7 +44,14 @@ class ReClient(object):
         try:
             request = urllib2.Request(self._url, data)
             response = urllib2.urlopen(request)
-        except urllib2.URLError:
-            return False
+        except urllib2.URLError, ex:
+            raise ReClientException(ex.reason)
 
-        return response.getcode() == 200
+        if response.getcode() != 200:
+            try:
+                data = json.load(response)
+                raise ReClientException(data.message)
+            except:
+                raise ReClientException('Unknown error.')
+
+        return True

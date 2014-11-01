@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Reliable-Email Web Client</title>
+
+    <link href="http://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        label {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+
+    <h1>Reliable-Email Web Client</h1>
+    <h2>Manual Submission</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+
+        {% for message in messages %}
+        <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="">
+
+        <div class="form-group">
+
+            <label for="formSubject">Subject:</label>
+            <input id="formSubject" class="form-control" type="text" name="subject"/>
+
+            <label for="formBody">Body</label>
+            <textarea id="formBody" class="form-control"  name="body"></textarea>
+
+            <label for="formToEmail">To (email):</label>
+            <input id="formToEmail" type="email" class="form-control"  name="to_email" />
+
+            <label for="formToName">To (name, optional):</label>
+            <input id="formToName" type="text" class="form-control" name="to_name" />
+
+        </div>
+
+        <button type="submit" class="btn btn-default">Submit</button>
+    </form>
+
+</div>
+
+</body>
+</html>

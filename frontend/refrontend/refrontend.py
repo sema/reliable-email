@@ -2,7 +2,6 @@
 import json
 from flask import Flask, request
 from requeue import DistributedQueue
-from werkzeug.exceptions import BadRequestKeyError
 
 DEBUG = False
 
@@ -75,6 +74,7 @@ def submit_email():
             'from_name': from_name
         })
 
+        app.logger.debug('Added email subject: %s, body: %s, to: %s' % (subject, body, to_email))
         return json.dumps({'ok': True})
 
     else:
@@ -83,4 +83,4 @@ def submit_email():
         return json.dumps({'ok': False, 'error_message': message}), 400, None
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5050)
