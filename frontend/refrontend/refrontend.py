@@ -1,7 +1,9 @@
-
 import json
+
 from flask import Flask, request
-from requeue import DistributedQueue
+
+from common.requeue.requeue import DistributedQueue
+
 
 DEBUG = False
 
