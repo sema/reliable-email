@@ -29,7 +29,6 @@ if app.config.get('LOG', None) is not None:
 
 # Connections
 
-# TODO handle failure
 queue = DistributedQueue(app.config['REDIS_SERVER_URL'])
 
 
