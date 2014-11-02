@@ -3,18 +3,18 @@ from flask import Flask, request, render_template, flash, redirect, url_for
 from reclient.client import ReClient, ReClientException
 import os
 
-DEBUG = True
-SECRET_KEY = 'ABC'
+DEBUG = False
+SECRET_KEY = 'CHANGE ME'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('REWEBCLIENT_SETTINGS', silent=True)
 
-RE_FRONTEND_URL = os.getenv('RE_FRONTEND_URL')
-if RE_FRONTEND_URL is None:
+app.config['RE_FRONTEND_URL'] = app.config.get('RE_FRONTEND_URL', None) or os.getenv('RE_FRONTEND_URL')
+if app.config['RE_FRONTEND_URL'] is None:
     raise RuntimeError("RE_FRONTEND_URL environment variable must be set and point to a reliable-email web frontend!")
 
-client = ReClient(RE_FRONTEND_URL)
+client = ReClient(app.config['RE_FRONTEND_URL'])
 
 
 @app.route('/', methods=['GET', 'POST'])

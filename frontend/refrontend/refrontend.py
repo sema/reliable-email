@@ -1,30 +1,31 @@
 import json
-
+import logging
 from flask import Flask, request
 import redis
 from requeue.requeue import DistributedQueue
 
-
 DEBUG = False
+LOG = None  # path to logfile
 
-LOG = 'refrontend.log'
-
-DEFAULT_FROM_EMAIL = 'the@sema.dk'
+DEFAULT_FROM_EMAIL = None
 DEFAULT_FROM_NAME = ''
 
-# TODO move into other config file
-REDIS_SERVER_URL = 'redis://localhost:6379?db=0'
+REDIS_SERVER_URL = 'redis://localhost:6379?db=0'  # default installation
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('REFRONTEND_SETTINGS', silent=True)
 
-# Logging
+# Default from email must be set!
+if app.config['DEFAULT_FROM_EMAIL'] is None:
+    raise RuntimeError("DEFAULT_FROM_EMAIL setting must be provided!")
 
-import logging
-file_handler = logging.FileHandler(LOG)
-file_handler.setLevel(logging.DEBUG)
-app.logger.addHandler(file_handler)
+# Logging
+if app.config.get('LOG', None) is not None:
+    file_handler = logging.FileHandler(app.config['LOG'])
+    file_handler.setLevel(logging.DEBUG)
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.DEBUG)
 
 # Connections
 
@@ -91,4 +92,4 @@ def submit_email():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5050)
+    app.run()
