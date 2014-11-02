@@ -9,7 +9,7 @@ DEBUG = False
 
 LOG = 'refrontend.log'
 
-DEFAULT_FROM_EMAIL = 'no-reply@example.org'
+DEFAULT_FROM_EMAIL = 'the@sema.dk'
 DEFAULT_FROM_NAME = ''
 
 # TODO move into other config file

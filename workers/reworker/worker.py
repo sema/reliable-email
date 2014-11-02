@@ -7,9 +7,12 @@ import logging
 
 from requeue.requeue import DistributedQueue, DistributedQueueEmpty
 from workers.logger import LoggerBackend
+from workers.aws import AWSBackend
+from workers.exceptions import WorkerInvalidEmail
 
 workers = {
-    'logger': LoggerBackend
+    'logger': LoggerBackend,
+    'aws': AWSBackend
 }
 
 logger = logging.getLogger('reworker')
@@ -56,8 +59,15 @@ def run(worker, queue, terminate_after_one_iteration=False, wait_on_empty=5, con
             valid, reason = _validate_email(email)
 
             if valid:
-                worker.send(**email)
-                queue.complete(token, connection_timeout=connection_timeout)
+
+                try:
+                    email['connection_timeout'] = connection_timeout  # pass connection timeout settings to worker
+                    worker.send(**email)
+                except WorkerInvalidEmail:
+                    queue.discard(token, connection_timeout=connection_timeout)
+                else:
+                    queue.complete(token, connection_timeout=connection_timeout)
+
             else:
                 queue.discard(token, connection_timeout=connection_timeout)
 
@@ -79,7 +89,7 @@ def cli():
 
 @cli.command()
 @click.option('--redis-url', default=None, help='Redis cluster used to persist email queue.')
-@click.option('--log', default=None, type=click.File('a'), help='Path to log file')
+@click.option('--log', default=None, help='Path to log file')
 @click.argument('backend')
 @click.pass_context
 def start(ctx, redis_url, log, backend):

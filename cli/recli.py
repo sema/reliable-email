@@ -17,7 +17,9 @@ def cli(ctx, redis_url):
 @cli.command()
 @click.pass_context
 def size(ctx):
-    click.echo(ctx.obj.size())
+    click.echo('Queue: %s' % ctx.obj.size())
+    click.echo('Processing: %s' % ctx.obj.size_processing())
+    click.echo('Discarded: %s' % ctx.obj.size_discarded())
 
 
 @cli.command()

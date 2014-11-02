@@ -14,22 +14,24 @@ class DistributedQueueException(Exception):
         super(DistributedQueueException, self).__init__(*args, **kwargs)
 
 
-def _connection_timeout_decorator(func):
-    def wrapper(*args, **kwargs):
-        connection_timeout = kwargs.pop('connection_timeout', None)
-        connection_timeout_interval = kwargs.pop('connection_timeout_interval', 5)
+def connection_timeout_decorator(ex_class=redis.ConnectionError):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            connection_timeout = kwargs.pop('connection_timeout', None)
+            connection_timeout_interval = kwargs.pop('connection_timeout_interval', 5)
 
-        if connection_timeout is None:
-            return func(*args, **kwargs)
-
-        deadline = time.time() + connection_timeout
-        while connection_timeout == 0 or time.time() <= deadline:
-            try:
+            if connection_timeout is None:
                 return func(*args, **kwargs)
-            except redis.ConnectionError:
-                time.sleep(connection_timeout_interval)
 
-    return wrapper
+            deadline = time.time() + connection_timeout
+            while connection_timeout == 0 or time.time() <= deadline:
+                try:
+                    return func(*args, **kwargs)
+                except ex_class:
+                    time.sleep(connection_timeout_interval)
+
+        return wrapper
+    return decorator
 
 
 class DistributedQueue(object):
@@ -58,11 +60,11 @@ class DistributedQueue(object):
         self._key_processing = value + ".processing"
         self._key_discard = value + ".discard"
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def push(self, email):
         self._redis.lpush(self._key_queue, json.dumps(email))
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def reserve(self):
         """
         Pops an email from the queue for processing.
@@ -83,14 +85,14 @@ class DistributedQueue(object):
 
         return json.loads(data), data
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def complete(self, token):
         removed = self._redis.lrem(self._key_processing, 1, token)
 
         if removed != 1:
             raise DistributedQueueException("Token not found")
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def discard(self, token):
         """
         Discard a token from the processing queue to the discard queue.
@@ -112,19 +114,19 @@ class DistributedQueue(object):
 
             raise DistributedQueueException("Token not found")
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def size(self):
         return self._redis.llen(self._key_queue)
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def size_processing(self):
         return self._redis.llen(self._key_processing)
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def size_discarded(self):
         return self._redis.llen(self._key_discard)
 
-    @_connection_timeout_decorator
+    @connection_timeout_decorator()
     def reset(self):
         self._redis.delete(self._key_queue)
         self._redis.delete(self._key_processing)
