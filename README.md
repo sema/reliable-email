@@ -130,8 +130,8 @@ Notice, that the above ensures that no email is lost before it is sent. However,
 Open Issues / TODOs
 -------------------
 
-Email Validation
-^^^^^^^^^^^^^^^^
+***Email Validation***
+
 
 Some initial email validation is conducted in the web frontend, while the worker and individual worker backends apply final validation of the submitted email.
  Thus, an illformed email can be rejected even though its submission was initially accepted. 
@@ -141,8 +141,7 @@ An alternative solution would be to apply all validation in the web frontend, an
 However, there will always be the possibility that a email is rejected from the external service, so it is not possible to avoid supporting a path where emails are
   rejected by the workers.
 
-Dropped Emails in Processing Queue
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+***Dropped Emails in Processing Queue***
 
 Workers move emails from the main mail queue to a temporary *processing queue*, such that if the worker is killed while processing an email, the email is still persisted.
 However, these emails are never *recovered* (put back into the main queue). A process is needed to identify such emails and recover them.
@@ -156,5 +155,5 @@ Selected track: Backend track (no or minimal frontend).
  * Web frontend framework: Flask (no prior experience)
  * Redis: (no prior experience)
 
- [1] https://github.com/uber/coding-challenge-tools/
+[1] https://github.com/uber/coding-challenge-tools/
 
