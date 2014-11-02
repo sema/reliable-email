@@ -8,11 +8,13 @@ import logging
 from requeue.requeue import DistributedQueue, DistributedQueueEmpty
 from workers.logger import LoggerBackend
 from workers.aws import AWSBackend
+from workers.sg import SendgridBackend
 from workers.exceptions import WorkerInvalidEmail
 
 workers = {
     'logger': LoggerBackend,
-    'aws': AWSBackend
+    'aws': AWSBackend,
+    'sendgrid': SendgridBackend
 }
 
 logger = logging.getLogger('reworker')
