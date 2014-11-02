@@ -1,6 +1,7 @@
 
 import unittest
 import refrontend
+from requeue.requeue import DistributedQueue
 
 
 class ReliableEmailTestCase(unittest.TestCase):
@@ -64,6 +65,16 @@ class ReliableEmailTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(refrontend.queue.size(), 0)
 
+    def test_redis_cluster_down(self):
+        refrontend.queue = DistributedQueue('redis://localhost:1')
+
+        response = self.app.post('/', data={
+            'subject': 'Test',
+            'body': 'Test',
+            'to': 'test@example.org'
+        })
+
+        self.assertEqual(response.status_code, 500)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 import json
 
 from flask import Flask, request
-
-from common.requeue.requeue import DistributedQueue
+import redis
+from requeue.requeue import DistributedQueue
 
 
 DEBUG = False
@@ -61,10 +61,15 @@ def submit_email():
     to_email = _normalize(request.form, 'to')
     to_name = _normalize(request.form, 'to_name', None)
 
-    from_email = _normalize(request.form, 'from_email', app.config['DEFAULT_FROM_EMAIL'])
+    from_email = _normalize(request.form, 'from', app.config['DEFAULT_FROM_EMAIL'])
     from_name = _normalize(request.form, 'from_name', app.config['DEFAULT_FROM_NAME'])
 
-    if subject is not None and body is not None and to_email is not None:
+    if subject is None or body is None or to_email is None:
+        message = 'Application sent malformed request missing one of arguments: subject, body or to'
+        app.logger.debug(message)
+        return json.dumps({'ok': False, 'error_message': message}), 400, None
+
+    try:
         queue.push({
             'subject': subject,
             'body': body,
@@ -79,10 +84,11 @@ def submit_email():
         app.logger.debug('Added email subject: %s, body: %s, to: %s' % (subject, body, to_email))
         return json.dumps({'ok': True})
 
-    else:
-        message = 'Application sent malformed request missing one of arguments: subject, body or to'
-        app.logger.debug(message)
-        return json.dumps({'ok': False, 'error_message': message}), 400, None
+    except redis.ConnectionError:
+        message = 'Connection to redis refused, email rejected'
+        app.logger.error(message)
+        return json.dumps({'ok': False, 'error_message': message}), 500, None
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5050)

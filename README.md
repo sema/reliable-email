@@ -33,7 +33,38 @@ In summary, reliable-email provides client libraries (```clients/```), the web f
 Web Frontend API (submitting emails)
 ------------------------------------
 
-TODO
+The Web Frontend exposes a single endpoint "/", accepting HTTP POST requests only.
+
+The HTTP POST request must contain the following parameters:
+
+    subject: The subject string
+    body: The email body
+    to: valid recipient email
+    to_name (optional): name of the recipient
+    from (optional): valid sender email
+    from_name (optional): name of the sender
+    
+Default values for ``from`` and ``from_name`` can be configured for the web frontend.
+
+The HTTP POST request is expected to return one of three status codes:
+
+    200: Success
+    400: Illformed submission
+    500: Could not handle request (e.g. the redis cluster is down)
+    
+In addition, the Web Frontend will include a JSON formatted response, on the form:
+
+```
+{
+  ok: 'false',
+  error_message: 'message'
+}
+```
+
+``ok`` is true on success and false on failure. If true the client is guaranteed that the submitted email will eventuall
+ by sent. If false the supplied error message may give a reason.
+
+A Python client and a web interface is supplied in ``clients/``. **The web interface is for development and debugging only**.
 
 Worker API (processing emails)
 ------------------------------
