@@ -90,14 +90,23 @@ def cli():
 @cli.command()
 @click.option('--redis-url', default=None, help='Redis cluster used to persist email queue.')
 @click.option('--log', default=None, help='Path to log file')
+@click.option('--verbose', default=False, is_flag=True)
 @click.argument('backend')
 @click.pass_context
-def start(ctx, redis_url, log, backend):
+def start(ctx, redis_url, log, verbose, backend):
     if redis_url is None:
         redis_url = 'redis://localhost:6379?db=0'
 
     if log is not None:
         handler = logging.FileHandler(log)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
+
+    if verbose:
+        handler = logging.StreamHandler(click.get_text_stream('stdout'))
         handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
