@@ -12,7 +12,8 @@ workers = {
     'logger': LoggerBackend
 }
 
-# TODO configure logging
+logger = logging.getLogger('reworker')
+logger.addHandler(logging.NullHandler())  # hide errors about missing handlers
 
 
 def _validate_email(email):
@@ -64,7 +65,7 @@ def run(worker, queue, terminate_after_one_iteration=False, wait_on_empty=5, con
             time.sleep(wait_on_empty)
         except Exception:
             # This should never happen, log the error and stop running so we can restart (let the exception bubble up)
-            logging.exception('An exception occurred when processing emails')
+            logger.exception('An exception occurred when processing emails')
             raise
 
         if terminate_after_one_iteration:
@@ -78,11 +79,20 @@ def cli():
 
 @cli.command()
 @click.option('--redis-url', default=None, help='Redis cluster used to persist email queue.')
+@click.option('--log', default=None, type=click.File('a'), help='Path to log file')
 @click.argument('backend')
 @click.pass_context
-def start(ctx, redis_url, backend):
+def start(ctx, redis_url, log, backend):
     if redis_url is None:
         redis_url = 'redis://localhost:6379?db=0'
+
+    if log is not None:
+        handler = logging.FileHandler(log)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
 
     worker = workers.get(backend, None)
 
