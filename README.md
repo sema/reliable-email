@@ -1,36 +1,37 @@
 reliable-email
 ==============
 
-This is my take on the **email service** presented by the Uber tool team's coding challenge[1].
+This is my take on the *email service* mentioned in the Uber tool team's coding challenge[1].
 
 Overview and Guarantees
 -----------------------
 
-The reliable-email service allows a *client* to submit emails to the *service*. The email will eventually be sent to its recipient(s) through one of many possible *backends*.  
+Reliable-email is an email queue service, which allows *clients* to submit emails, which at some point are sent using one or multiple configurable *backends* (currently we support AWS and Sendgrid).
+
 The service is build with the following properties in mind.
 
- * Low latency: Clients should be able to submit emails to the service quickly and continue with their business. Emails are sent using backend services asynchronously.
- * High availability: Individual components are build to be run in clusters, such that 
-   (1) clients can reasonably expect to submit their emails, we do not want email to accumulate at clients, and
-   (2) clients can expect email to be delivered in a timely fashion, even if a single backend fails.
- * Stable client interface: Minimize the need of updating client facing interfaces and code. Many different clients will use this service, and we do not want to update them often.
  * Durability: When the client submits an email, then that email *will* eventually be sent to its recipient (if possible)*. We do not want data (email) loss.
+ * High availability: Individual components are build to be run in clusters, such that 
+   (1) clients can reasonably expect to submit their emails to the service (we do not want email to accumulate at clients), and
+   (2) clients can expect email to be delivered in a timely fashion, even if a single backend fails.
+ * Low latency: Clients should be able to submit emails to the service quickly and continue with their business. Clients do not need to wait for an email to be sent through an available backend.
+ * Stable client interface: Minimize the need of updating client facing interfaces and code. Many different clients will use this service, and we do not want to update them often.
  
 The suggested architecture of reliable-email is as follows:
  
  client -> [HA] -> web frontend -> [redis cluster] <-> worker -> [external e-mail service]
 
-*A client* can submit emails to reliable-email through the *web frontend*, which accepts simple POST requests. 
-The web frontend is kept simple and the intention is to not change the interface which breaks old clients.
+*A client* can submit emails through the *web frontend*, which accepts simple POST requests. 
+The web frontend is kept simple and stable to avoid breaking old clients.
 If the web frontend responds with a success, then the submitted email is guaranteed to eventually be sent (if possible)*. 
 
-Submitted emails are persisted in a redis cluster, for which the web frontend acts as a producer and multiple workers act as consumers. 
-Each worker polls redis for submitted emails, and sends the emails using configurable backends (AWS and sendgrid are currently supported).
+Submitted emails are persisted in a redis cluster, for which the web frontend acts as a producer and workers act as consumers. 
+Each worker polls redis for submitted emails, and sends the emails using configurable backends.
 
 The web frontend and workers are build to be stateless, and support many instances. The intention is to have multiple web frontends behind some
-HA layer, to minimize the risk of the frontend being unavailable, and to use multiple workers using different backends, to handle individual backend failures.
+HA layer to minimize the risk of the frontend being unavailable, and to use multiple workers with different backends to handle individual backends failing.
 
-Further, decoupling email submission and sending (using redis as an intermediary) decreases latency for the clients (low latency) compared to immediately sending emails.
+Further, decoupling email submission and sending (using redis as an intermediary) decreases latency for the clients compared to immediately sending emails.
 
 In summary, reliable-email provides client libraries (```clients/```), a web frontend (```frontend/```), workers (```workers/```), and a CLI interface to inspect and manage the queue in redis (```cli/```).
 
