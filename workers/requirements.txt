@@ -1,5 +1,5 @@
 
 click==3.3
-flanker==0.4
+flanker>=0.4
 boto
 sendgrid==1.2
