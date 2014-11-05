@@ -20,7 +20,7 @@ class ReliableEmailTestCase(unittest.TestCase):
         self.assertNotEqual(response.status_code, 200)
 
     def test_missing_args(self):
-        response = self.app.post('/', {
+        response = self.app.post('/', data={
             'to': 'someone@example.org'
         })
 
