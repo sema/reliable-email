@@ -102,6 +102,13 @@ class ReWorkerTest(unittest.TestCase):
         self.assertRaises(redis.ConnectionError, worker.run, w, queue, True, connection_timeout=None)
         self.assertEqual(w.send_count, 0)
 
+    def test_cant_connect_to_timeout_redis(self):
+        w = AlwaysWorkingWorkerMock()
+        queue = DistributedQueue('redis://localhost:1')
+
+        self.assertRaises(redis.ConnectionError, worker.run, w, queue, True, connection_timeout=1)
+        self.assertEqual(w.send_count, 0)
+
 
 class LoggerTest(unittest.TestCase):
 

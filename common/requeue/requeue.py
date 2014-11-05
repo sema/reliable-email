@@ -20,15 +20,15 @@ def connection_timeout_decorator(ex_class=redis.ConnectionError):
             connection_timeout = kwargs.pop('connection_timeout', None)
             connection_timeout_interval = kwargs.pop('connection_timeout_interval', 5)
 
-            if connection_timeout is None:
-                return func(*args, **kwargs)
+            if connection_timeout is not None:
+                deadline = time.time() + connection_timeout
+                while connection_timeout == 0 or time.time() <= deadline:
+                    try:
+                        return func(*args, **kwargs)
+                    except ex_class:
+                        time.sleep(connection_timeout_interval)
 
-            deadline = time.time() + connection_timeout
-            while connection_timeout == 0 or time.time() <= deadline:
-                try:
-                    return func(*args, **kwargs)
-                except ex_class:
-                    time.sleep(connection_timeout_interval)
+            return func(*args, **kwargs)            
 
         return wrapper
     return decorator
